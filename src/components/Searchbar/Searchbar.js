@@ -1,4 +1,4 @@
-import { Component } from "react";
+import { useState } from "react";
 import {
   SearchbarStyled,
   SearchForm,
@@ -7,40 +7,38 @@ import {
   SearchFormInput,
 } from "./Searchbar.styled";
 
-export default class Searchbar extends Component {
-  state = { searchInfo: "" };
+export default function Searchbar({ onSubmit }) {
+  const [searchQuery, setSearchQuery] = useState("");
 
-  handleNameChange = (e) => {
-    this.setState({ searchInfo: e.currentTarget.value.toLowerCase() });
+  const handleNameChange = (e) => {
+    setSearchQuery(e.currentTarget.value.toLowerCase());
   };
 
-  handleSubmit = (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (this.state.searchInfo.trim() === "") {
+    if (searchQuery.trim() === "") {
       return alert("Enter your request");
     }
-    this.props.onSubmit(this.state.searchInfo);
-    this.setState({ searchInfo: "" });
+    onSubmit(searchQuery);
+    setSearchQuery("");
   };
 
-  render() {
-    return (
-      <SearchbarStyled>
-        <SearchForm onSubmit={this.handleSubmit}>
-          <SearchFormButton type="submit">
-            <SearchFormButtonLabel>Search</SearchFormButtonLabel>
-          </SearchFormButton>
+  return (
+    <SearchbarStyled>
+      <SearchForm onSubmit={handleSubmit}>
+        <SearchFormButton type="submit">
+          <SearchFormButtonLabel>Search</SearchFormButtonLabel>
+        </SearchFormButton>
 
-          <SearchFormInput
-            type="text"
-            autoComplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            value={this.state.searchInfo}
-            onChange={this.handleNameChange}
-          />
-        </SearchForm>
-      </SearchbarStyled>
-    );
-  }
+        <SearchFormInput
+          type="text"
+          autoComplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          value={searchQuery}
+          onChange={handleNameChange}
+        />
+      </SearchForm>
+    </SearchbarStyled>
+  );
 }

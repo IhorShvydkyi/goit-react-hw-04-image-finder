@@ -22,4 +22,5 @@ export const ButtonLoadMore = styled.button`
   &::hover {
     background-color: #303f9f;
   }
+  margin-top: 15px;
 `;

@@ -1,6 +1,6 @@
-import { Component } from "react";
-// import Loader from 'react-loader-spinner'
-// import 'react-loader-spinner/dist/loader/css/react-spinner-loader.css'
+import { useState, useEffect } from "react";
+import Loader from "react-loader-spinner";
+import "react-loader-spinner/dist/loader/css/react-spinner-loader.css";
 import Searchbar from "./components/Searchbar/Searchbar";
 import api from "./components/Services/Api";
 import ImageGallery from "./components/ImageGallery/ImageGallery";
@@ -8,98 +8,81 @@ import LoadMore from "./components/Button/Button";
 import ModalWindow from "./components/Modal/Modal";
 import "./App.css";
 
-export default class App extends Component {
-  state = {
-    searchInfo: "",
-    data: [],
-    status: "idle",
-    page: 1,
-    error: null,
-    showModal: false,
-    currImg: {},
-  };
+export default function App() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [page, setPage] = useState(1);
+  const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [largeImageURL, setLargeImageURL] = useState({});
 
-  componentDidUpdate(prevProps, prevState) {
-    const { page, searchInfo } = this.state;
-
-    if (prevState.searchInfo !== searchInfo) {
-      this.setState({ status: "pending", page: 1 });
-      api
-        .fetchImages(searchInfo, page)
-        .then((data) => data.hits)
-        .then((images) => {
-          this.setState({ data: images, status: "resolved" });
-        })
-        .catch((error) => this.setState({ error, status: "rejected" }));
+  useEffect(() => {
+    if (searchQuery !== "") {
+      setIsLoading(true);
     }
-
-    if (prevState.page !== page) {
-      this.setState({ status: "pending" });
-
-      api
-        .fetchImages(searchInfo, page)
-        .then((data) => data.hits)
-        .then((images) =>
-          this.setState((prevState) => ({
-            data: [...prevState.data, ...images],
-            status: "resolved",
-          }))
-        )
-        .catch((error) => this.setState({ error, status: "rejected" }));
+  }, [searchQuery]);
+  useEffect(() => {
+    if (!searchQuery) {
+      return;
     }
-  }
+    fetchImages();
+  }, [searchQuery]);
 
-  handleFormSubmit = (searchInfo) => {
-    this.setState({ searchInfo });
+  const fetchImages = () => {
+    setIsLoading(true);
+
+    api
+      .fetchImages(searchQuery, page)
+      .then(
+        ({ hits }) => setData((prevImage) => [...prevImage, ...hits]),
+        setPage((prevPage) => prevPage + 1)
+      )
+
+      .catch((error) => setError(error))
+
+      .finally(() => setIsLoading(false));
   };
 
-  onLoadMore = () => {
-    this.setState((prevState) => ({ page: prevState.page + 1 }));
+  const handleFormSubmit = (searchQuery) => {
+    setSearchQuery(searchQuery);
+    setData([]);
+    setPage(1);
   };
 
-  toggleModal = (image) => {
-    this.setState(({ showModal }) => ({
-      showModal: !showModal,
-      currImg: image,
-    }));
+  const toggleModal = (largeImageURL) => {
+    setShowModal((showModal) => !showModal);
+    setLargeImageURL(largeImageURL);
   };
 
-  render() {
-    const { status, data, currImg } = this.state;
-
-    return (
-      <div className="App">
-        <Searchbar onSubmit={this.handleFormSubmit} />
-
-        {status === "idle" && <div>Enter your request</div>}
-
-        {status === "pending" && (
-          <div>
-            {/* <Loader
-							type="ThreeDots"
-							color=" #3f51b5"
-							height={100}
-							width={100}
-							timeout={4000} 
-						/> */}
-            Loading...
-          </div>
-        )}
-
-        {status === "resolved" && (
-          <div>
-            <ImageGallery data={data} onOpenModal={this.toggleModal} />
-            {data.length > 0 && <LoadMore onLoadMore={this.onLoadMore} />}
-          </div>
-        )}
-
-        {status === "rejected" && <div> Something went wrong</div>}
-        {this.state.showModal && (
-          <ModalWindow onClose={this.toggleModal}>
-            <img src={currImg.largeImageURL} alt={currImg.tags} />
-          </ModalWindow>
+  return (
+    <div className="App">
+      {error && <p>Sorry. Something is wrong ¯\_(ツ)_/¯</p>}
+      <div>
+        {isLoading && (
+          <Loader
+            type="ThreeDots"
+            color=" #3f51b5"
+            height={100}
+            width={100}
+            timeout={4000}
+          />
         )}
       </div>
-    );
-  }
+      <Searchbar onSubmit={handleFormSubmit} />
+
+      {
+        <div>
+          <ImageGallery data={data} onOpenModal={toggleModal} />
+          {data.length > 0 && <LoadMore onLoadMore={fetchImages} />}
+          {data.length < 1 && <p>Please enter what you want to see </p>}
+        </div>
+      }
+      {showModal && (
+        <ModalWindow onClose={toggleModal}>
+          <img src={largeImageURL} alt="" width={400} />
+        </ModalWindow>
+      )}
+    </div>
+  );
 }
