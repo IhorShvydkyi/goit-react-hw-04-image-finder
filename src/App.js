@@ -43,7 +43,6 @@ export default function App() {
 
       .finally(() => setIsLoading(false));
   };
-
   const handleFormSubmit = (searchQuery) => {
     setSearchQuery(searchQuery);
     setData([]);
